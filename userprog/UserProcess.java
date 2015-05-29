@@ -4,6 +4,7 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 
+import java.util.ArrayList;
 import java.io.EOFException;
 
 /**
@@ -307,6 +308,15 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		//TODO Implement?
+		/*for (int s = 0; s < coff.getNumSections(); ++s){
+			CoffSection section = coff.getSection(s);
+			Lib.debug(dbgProcess, "\tRemoving " + section.getName()
+					+ " section (" + section.getLength() + " pages)");
+			for (int i = 0 i < section.getLength(); ++i){
+
+			}
+		}*/
 	}
 
 	/**
@@ -355,7 +365,25 @@ public class UserProcess {
 	 * exit() never returns.
 	 */
 	private int handleExit(int status){
-		//TODO Close all file descriptors
+		Lib.debug(dbgProcess, "Process exiting...");
+		
+		//end the program runnning under process
+		coff.close();
+		//close all the file descriptors
+		for (int i = 0; i < files.length; ++i){
+			if (files[i] != null){
+				files[i].close();	//close the descriptor
+				files[i] = null;		//clear it for good measure
+			} else {
+				break;
+			}
+		}
+		if (parent != null){
+			//Child process remove from the parents process list
+			parent.children.remove(this);
+		}
+		//TODO Call if implemented
+		//unloadSections();
 		return status;
 	}
 
@@ -472,11 +500,16 @@ public class UserProcess {
 		}
 	}
 
-	private int id = numCreated++;
+	/********************/
+	private OpenFile[] files = new OpenFile[16];
+
+	public UserProcess parent = null;
+	public ArrayList<UserProcess> children = new ArrayList<UserProcess>();
 
 	/** Number of times the UserProcess constructor was called. */
 	private static int numCreated = 0;
-
+	private int id = numCreated++;
+	/********************/
 	/** The program being run by this process. */
 	protected Coff coff;
 
