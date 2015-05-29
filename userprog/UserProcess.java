@@ -343,6 +343,21 @@ public class UserProcess {
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
 		return 0;
 	}
+	/**
+	 * Terminate the current process immediately. Any open file descriptors
+	 * belonging to the process are closed. Any children of the process no longer
+	 * have a parent process.
+	 *
+	 * status is returned to the parent process as this process's exit status and
+	 * can be collected using the join syscall. A process exiting normally should
+	 * (but is not required to) set status to 0.
+	 *
+	 * exit() never returns.
+	 */
+	private int handleExit(int status){
+		//TODO Close all file descriptors
+		return status;
+	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
 			syscallJoin = 3, syscallCreate = 4, syscallOpen = 5,
@@ -419,6 +434,8 @@ public class UserProcess {
 				//TODO change to 0?
 				return -1;
 			}
+		case syscallExit:
+			return handleExit(a0);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
