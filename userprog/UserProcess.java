@@ -4,7 +4,7 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.io.EOFException;
 
 /**
@@ -53,7 +53,8 @@ public class UserProcess {
 		if (!load(name, args))
 			return false;
 
-		new UThread(this).setName(name).fork();
+		thisThread = new UThread(this).setName(name);
+		thisThread.fork();
 
 		return true;
 	}
@@ -413,6 +414,46 @@ public class UserProcess {
 
 	}
 
+	/**
+	 * Suspend execution of the current process until the child process specified
+	 * by the processID argument has exited. If the child has already exited by the
+	 * time of the call, returns immediately. When the current process resumes, it
+	 * disowns the child process, so that join() cannot be used on that process
+	 * again.
+	 *
+	 * processID is the process ID of the child process, returned by exec().
+	 *
+	 * status points to an integer where the exit status of the child process will
+	 * be stored. This is the value the child passed to exit(). If the child exited
+	 * because of an unhandled exception, the value stored is not defined.
+	 *
+	 * If the child exited normally, returns 1. If the child exited as a result of
+	 * an unhandled exception, returns 0. If processID does not refer to a child
+	 * process of the current process, returns -1.
+	 */
+	private int handleJoin(int pid, int status){
+		//find the child
+		UserProcess waiton = null;
+		for (int i = 0; i < children.size(); ++i){
+			if (children.get(i).id == pid){
+				waiton = children.get(i);
+				break;
+			}
+		}
+		//PID does not exist; cannot wait
+		if (waiton == null || waiton.thisThread == null){
+			return -1;
+		}
+
+		//Join
+		thisThread.join();
+		//byte[] stat = new byte[4];
+		//Lib.bytesFromInt(stat, 0, child.status);
+		//int bytesWritten = writeVirtualMemory(statusAddress, stat);
+		//normal exit
+		return 1;
+	}
+
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
 			syscallJoin = 3, syscallCreate = 4, syscallOpen = 5,
 			syscallRead = 6, syscallWrite = 7, syscallClose = 8,
@@ -494,6 +535,9 @@ public class UserProcess {
 		case syscallExec:
 			return handleExec(a0, a1, a2);
 
+		case syscallJoin:
+			return handleJoin(a0, a1);
+
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 			Lib.assertNotReached("Unknown system call!");
@@ -530,6 +574,8 @@ public class UserProcess {
 	}
 
 	/********************/
+	public UThread thisThread = null;
+
 	private OpenFile[] files = new OpenFile[16];
 
 	public UserProcess parent = null;
