@@ -337,8 +337,9 @@ public class UserProcess {
 	 */
 	private int handleHalt() {
 
+		Lib.debug(dbgProcess, "Process ID calling halt: " + this.id);
 		Machine.halt();
-
+				
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
 		return 0;
 	}
@@ -412,7 +413,12 @@ public class UserProcess {
 	public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 		switch (syscall) {
 		case syscallHalt:
-			return handleHalt();
+			if (this.id == 0) {
+				return handleHalt();
+			} else {
+				//TODO change to 0?
+				return -1;
+			}
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -448,6 +454,11 @@ public class UserProcess {
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
+
+	private int id = numCreated++;
+
+	/** Number of times the UserProcess constructor was called. */
+	private static int numCreated = 0;
 
 	/** The program being run by this process. */
 	protected Coff coff;
