@@ -347,7 +347,7 @@ public class UserProcess {
 	 */
 	private int handleHalt() {
 
-		Lib.debug(dbgProcess, "Process ID calling halt: " + this.id);
+		Lib.debug(dbgProcess, "[D] ===> Process ID calling halt: " + this.id);
 		Machine.halt();
 				
 		Lib.assertNotReached("Machine.halt() did not halt machine!");
@@ -365,7 +365,7 @@ public class UserProcess {
 	 * exit() never returns.
 	 */
 	private int handleExit(int status){
-		Lib.debug(dbgProcess, "Process exiting...");
+		Lib.debug(dbgProcess, "[D] ===> Process exiting...");
 		
 		//end the program runnning under process
 		coff.close();
@@ -385,6 +385,32 @@ public class UserProcess {
 		//TODO Call if implemented
 		//unloadSections();
 		return status;
+	}
+
+	private int handleExec(int file, int argc, int argv){
+		//int exec(char *file, int argc, char *argv[]);
+		//number of args cannot be negative
+		if (argc < 0) return -1;
+		String name = readVirtualMemoryString(file, maxStringLength);
+		Lib.debug(dbgProcess, "[D] ===> Loaded executable name: " + name);
+		//add the args
+		String args[] = new String[argc];
+		for (int i = 0; i < argc; ++i){
+			byte[] memLocation = new byte[4];
+			if(this.readVirtualMemory(argv + i*4, memLocation) > 0){
+				args[i] = readVirtualMemoryString(Lib.bytesToInt(memLocation, 0), maxStringLength);
+			}
+		}
+		Lib.debug(dbgProcess, "[D] ===> Starting new UserProcess");
+		UserProcess newProcess = UserProcess.newUserProcess();
+		if(!newProcess.execute(name, args)) return -1;
+		//Add to child process list
+		children.add(newProcess);
+		//Set its parent
+		newProcess.parent = this;
+		//Return the new process' id
+		return id;
+
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -465,6 +491,9 @@ public class UserProcess {
 		case syscallExit:
 			return handleExit(a0);
 
+		case syscallExec:
+			return handleExec(a0, a1, a2);
+
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 			Lib.assertNotReached("Unknown system call!");
@@ -509,6 +538,7 @@ public class UserProcess {
 	/** Number of times the UserProcess constructor was called. */
 	private static int numCreated = 0;
 	private int id = numCreated++;
+	private static int maxStringLength = 256; 
 	/********************/
 	/** The program being run by this process. */
 	protected Coff coff;
