@@ -281,30 +281,10 @@ public class KThread {
 	 * is not guaranteed to return. This thread must not be the current thread.
 	 */
 	public void join() {
+		Lib.debug(dbgThread, "Joining to thread: " + toString());
 
-		if (status == statusFinished) {
-			//Cant join finished thread
-			Lib.debug(dbgThread, "[D] ===> Attempting to join finished thread: " + toString());
-		} else {
-			Lib.debug(dbgThread, "[D] ===> Joining to thread: " + toString());
-			Lib.assertTrue(this != currentThread);
-			boolean intStatus = Machine.interrupt().disable();
-			
-			// If the thread is new, put it on the ready queue
-			if (status == statusNew)
-				ready();
-			
-			// put the current thread on this threads joined threads list and sleep it
-			linkedThreads.waitForAccess(currentThread);
-			sleep();
-			
-			// restore the machine status before the join call
-			Machine.interrupt().restore(intStatus);
-		}currentThread.sleep();
-		}
-		// turn them back on
-		Machine.interrupt().restore(int_status);
-		
+		Lib.assertTrue(this != currentThread);
+
 	}
 
 	/**

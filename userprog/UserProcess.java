@@ -574,7 +574,7 @@ public class UserProcess {
 	}
 
 	/********************/
-	public UThread thisThread = null;
+	public KThread thisThread = null;
 
 	private OpenFile[] files = new OpenFile[16];
 
