@@ -355,10 +355,15 @@ public class UserProcess {
 	private int handleHalt() {
 
 		Lib.debug(dbgProcess, "[D] ===> Process ID calling halt: " + this.id);
-		Machine.halt();
-				
-		Lib.assertNotReached("Machine.halt() did not halt machine!");
-		return 0;
+		if (this.id == 0){
+			Machine.halt();
+			Lib.assertNotReached("Machine.halt() did not halt machine!");
+			return 0;
+		} else {
+			//Calling process not the root proccess so return witout halting
+			Lib.debug(dbgProcess, "[D] ===> Not root process! Not  halting.");
+			return 0;
+		}
 	}
 	/**
 	 * Terminate the current process immediately. Any open file descriptors
@@ -460,6 +465,16 @@ public class UserProcess {
 		return 1;
 	}
 
+	private int handleCreate(int name){
+
+		return 0;
+	}
+
+	private int handleOpen(int name){
+
+		return 0;
+	}
+
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
 			syscallJoin = 3, syscallCreate = 4, syscallOpen = 5,
 			syscallRead = 6, syscallWrite = 7, syscallClose = 8,
@@ -529,12 +544,8 @@ public class UserProcess {
 	public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
 		switch (syscall) {
 		case syscallHalt:
-			if (this.id == 0) {
-				return handleHalt();
-			} else {
-				//TODO change to 0?
-				return -1;
-			}
+			return handleHalt();
+
 		case syscallExit:
 			return handleExit(a0);
 
@@ -543,6 +554,13 @@ public class UserProcess {
 
 		case syscallJoin:
 			return handleJoin(a0, a1);
+
+		case syscallCreate:
+			return handleCreate(a0);
+
+		case syscallOpen:
+			return handleOpen(a0);
+
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -577,6 +595,16 @@ public class UserProcess {
 					+ Processor.exceptionNames[cause]);
 			Lib.assertNotReached("Unexpected exception");
 		}
+	}
+
+	//returns the next valid fileDescriptor location
+	private int getValidFileDescriptor(){
+		for (int i = 0; i < fileDescriptors.length; ++i){
+			if (fileDescriptors[i] == null){
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	/********************/
