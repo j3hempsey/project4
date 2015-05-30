@@ -397,6 +397,8 @@ public class UserProcess {
 		return status;
 	}
 
+	//handles open and create
+	//boolean true if call is create otherwise set to false
 	private int handleOpen(int name, boolean create){
 		//get the first free file descriptor
 		int descriptor = getValidFileDescriptor();
@@ -404,7 +406,7 @@ public class UserProcess {
 			//no descriptor 
 			return -1;
 		}
-		
+		//TODO Check virtual address
 		String fileName = readVirtualMemoryString(name, maxStringLength);
 
 		OpenFile file = UserKernel.fileSystem.open(fileName, create);
@@ -417,8 +419,28 @@ public class UserProcess {
 	}
 
 	private int handleRead(int filedesc, int buffer, int count){
+		//make sure args are valid
+		if (!validAddress(buffer)){
+			return -1;
+		}
+		if (!isValidFileDescriptor(filedesc)){
+			return -1;
+		}
 
-		return 0;
+		//create the read buffer
+		byte[] readBuffer = new byte[count];
+
+		int readBytes = fileDescriptors[filedesc].read(readBuffer, 0, count);
+
+		//make sure bytes were read
+		if (readBytes == -1) return -1;
+		
+		int wroteBytes = writeVirtualMemory(buffer, readBuffer, 0, readBytes);
+		//make sure everything was written
+		if (wroteBytes != readBytes)
+			return -1;
+
+		return readBytes;
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -556,6 +578,22 @@ public class UserProcess {
 		return -1;
 	}
 
+	private boolean isValidFileDescriptor(int desc){
+		//between 0 and 16
+		if (desc < 0 || desc >= fileDescriptors.length)
+			return false;
+		//make sure it exsists too
+		return fileDescriptors[desc] != null;
+	}
+
+	//make sure virtual address is valid
+	protected boolean validAddress(int vaddr) {
+		int page = Processor.pageFromAddress(vaddr);
+		if (page < numPages && page >= 0){
+			return true;
+		} 
+		return false;
+	}
 	/********************/
 	public KThread thisThread = null;
 
