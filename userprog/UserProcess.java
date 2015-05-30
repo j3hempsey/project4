@@ -394,8 +394,6 @@ public class UserProcess {
 			//Child process remove from the parents process list
 			parent.children.remove(this);
 		}
-		//TODO Call if implemented
-		//unloadSections();
 		return status;
 	}
 
@@ -416,6 +414,11 @@ public class UserProcess {
 		fileDescriptors[descriptor] = file;
 		//return new descriptor or -1 for error
 		return descriptor;
+	}
+
+	private int handleRead(int filedesc, int buffer, int count){
+
+		return 0;
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -493,16 +496,19 @@ public class UserProcess {
 			return handleExit(a0);
 
 		case syscallExec:
-			return handleExec(a0, a1, a2);
+			return 0;
 
 		case syscallJoin:
-			return handleJoin(a0, a1);
+			return 0;
 
 		case syscallCreate:
 			return handleOpen(a0, true);
 
 		case syscallOpen:
 			return handleOpen(a0, false);
+
+		case syscallRead:
+			return handleRead(a0, a1, a2);
 
 
 		default:
