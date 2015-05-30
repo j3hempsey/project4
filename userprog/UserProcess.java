@@ -28,6 +28,12 @@ public class UserProcess {
 		pageTable = new TranslationEntry[numPhysPages];
 		for (int i = 0; i < numPhysPages; i++)
 			pageTable[i] = new TranslationEntry(i, i, true, false, false, false);
+
+		//initialize the file descriptor table
+		//standard input 
+		fileDescriptors[0] = UserKernel.console.openForReading();
+		//standard ouput
+		fileDescriptors[1] = UserKernel.console.openForWriting();
 	}
 
 	/**
@@ -585,6 +591,9 @@ public class UserProcess {
 	private static int numCreated = 0;
 	private int id = numCreated++;
 	private static int maxStringLength = 256; 
+
+	//file descriptor table
+	protected OpenFile[] fileDescriptors = new OpenFile[16];
 	/********************/
 	/** The program being run by this process. */
 	protected Coff coff;
