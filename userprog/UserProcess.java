@@ -465,14 +465,23 @@ public class UserProcess {
 		return 1;
 	}
 
-	private int handleCreate(int name){
+	private int handleOpen(int name, boolean create){
+		//get the first free file descriptor
+		int descriptor = getValidFileDescriptor();
+		if (descriptor == -1){
+			//no descriptor 
+			return -1;
+		}
+		
+		String fileName = readVirtualMemoryString(name, maxStringLength);
 
-		return 0;
-	}
-
-	private int handleOpen(int name){
-
-		return 0;
+		OpenFile file = UserKernel.fileSystem.open(fileName, create);
+		if (file == null){
+			return -1;
+		}
+		fileDescriptors[descriptor] = file;
+		//return new descriptor or -1 for error
+		return descriptor;
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -556,10 +565,10 @@ public class UserProcess {
 			return handleJoin(a0, a1);
 
 		case syscallCreate:
-			return handleCreate(a0);
+			return handleOpen(a0, true);
 
 		case syscallOpen:
-			return handleOpen(a0);
+			return handleOpen(a0, false);
 
 
 		default:
