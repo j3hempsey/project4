@@ -315,15 +315,6 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-		//TODO Implement?
-		/*for (int s = 0; s < coff.getNumSections(); ++s){
-			CoffSection section = coff.getSection(s);
-			Lib.debug(dbgProcess, "\tRemoving " + section.getName()
-					+ " section (" + section.getLength() + " pages)");
-			for (int i = 0 i < section.getLength(); ++i){
-
-			}
-		}*/
 	}
 
 	/**
@@ -365,17 +356,7 @@ public class UserProcess {
 			return 0;
 		}
 	}
-	/**
-	 * Terminate the current process immediately. Any open file descriptors
-	 * belonging to the process are closed. Any children of the process no longer
-	 * have a parent process.
-	 *
-	 * status is returned to the parent process as this process's exit status and
-	 * can be collected using the join syscall. A process exiting normally should
-	 * (but is not required to) set status to 0.
-	 *
-	 * exit() never returns.
-	 */
+	/*
 	private int handleExit(int status){
 		Lib.debug(dbgProcess, "[D] ===> Process exiting...");
 		
@@ -396,19 +377,24 @@ public class UserProcess {
 		}
 		return status;
 	}
+	*/
 
 	//handles open and create
 	//boolean true if call is create otherwise set to false
 	private int handleOpen(int name, boolean create){
+		if (!validAddress(name)) return -1;
 		//get the first free file descriptor
 		int descriptor = getValidFileDescriptor();
 		if (descriptor == -1){
 			//no descriptor 
 			return -1;
 		}
-		//TODO Check virtual address
 		String fileName = readVirtualMemoryString(name, maxStringLength);
 
+		if (FileReference.addReference(fileName) == false){
+			//file is slated for deletion we cannot reference it
+			return -1;
+		}
 		OpenFile file = UserKernel.fileSystem.open(fileName, create);
 		if (file == null){
 			return -1;
@@ -458,10 +444,11 @@ public class UserProcess {
 
 	private int handleClose(int filedesc){
 		if (!isValidFileDescriptor(filedesc)) return -1;
+	 	String fileName = fileDescriptors[filedesc].getName();
 		fileDescriptors[filedesc].close();
 		fileDescriptors[filedesc] = null;
 
-		return 0;
+		return FileReference.removeReference(fileName);
 	}
 
 	private int handleUnlink(int name){
@@ -541,15 +528,6 @@ public class UserProcess {
 		switch (syscall) {
 		case syscallHalt:
 			return handleHalt();
-
-		case syscallExit:
-			return handleExit(a0);
-
-		case syscallExec:
-			return 0;
-
-		case syscallJoin:
-			return 0;
 
 		case syscallCreate:
 			return handleOpen(a0, true);
