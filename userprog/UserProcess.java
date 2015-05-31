@@ -454,7 +454,21 @@ public class UserProcess {
 		int written = fileDescriptors[filedesc].write(writeBuffer, 0, readBytes);
 		//return bytes written or -1
 		return written;
+	}
 
+	private int handleClose(int filedesc){
+		if (!isValidFileDescriptor(filedesc)) return -1;
+		fileDescriptors[filedesc].close();
+		fileDescriptors[filedesc] = null;
+
+		return 0;
+	}
+
+	private int handleUnlink(int name){
+		if (!validAddress(name)) return -1;
+
+		String file = readVirtualMemoryString(name, maxStringLength);
+		return FileReference.deleteFile(file);
 	}
 
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
@@ -546,6 +560,14 @@ public class UserProcess {
 		case syscallRead:
 			return handleRead(a0, a1, a2);
 
+		case syscallWrite:
+			return handleWrite(a0, a1, a2);
+
+		case syscallClose:
+			return handleClose(a0);
+
+		case syscallUnlink:
+			return handleUnlink(a0);
 
 		default:
 			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -643,4 +665,81 @@ public class UserProcess {
 	private static final int pageSize = Processor.pageSize;
 
 	private static final char dbgProcess = 'a';
+
+	//class to keep track of references to files for processes
+	public static class FileReference{
+		int numReferences;
+		boolean canDelete;
+		private static Lock fileReferencesLock = new Lock();
+		//keep track of filenames and their references
+		private static HashMap<String, FileReference> references = new HashMap<String, FileReference>();
+
+		public FileReference(){
+			this.canDelete = false;
+			this.numReferences = 0;
+		}
+
+		public static boolean addReference(String file){
+			FileReference temp;
+			fileReferencesLock.acquire();
+			//if reference doesnot exist add it
+			temp = references.get(file);
+			if (temp == null){
+				temp = new FileReference();
+				references.put(file, temp);
+			}
+			//if not being deleted add a reference
+			if (temp.canDelete == false) temp.numReferences++;
+
+			fileReferencesLock.release();
+			//return if reference was added or not
+			return !temp.canDelete;
+		}
+
+		public static int removeReference(String file){
+			FileReference temp;
+			fileReferencesLock.acquire();
+			//if reference doesnot exist add it
+			temp = references.get(file);
+			if (temp == null){
+				temp = new FileReference();
+				references.put(file, temp);
+			}
+			//can remove reference even if file is slated for deletion
+			temp.numReferences--;
+			//if no active reference remove
+			if (temp.numReferences <= 0){
+				references.remove(file);
+				//if reference is slated for deleteion do it
+				if (temp.canDelete){
+					if (UserKernel.fileSystem.remove(file) == false) return -1; //failed to delete
+				}
+			}
+			fileReferencesLock.release();
+			return 0;
+		}
+
+		public static int deleteFile(String file){
+			FileReference temp;
+			fileReferencesLock.acquire();
+			fileReferencesLock.acquire();
+			//if reference doesnot exist add it
+			temp = references.get(file);
+			if (temp == null){
+				temp = new FileReference();
+				references.put(file, temp);
+			}
+			temp.canDelete = true;
+			if (temp.numReferences <= 0){
+				references.remove(file);
+				//if reference is slated for deleteion do it
+				if (temp.canDelete){
+					if (UserKernel.fileSystem.remove(file) == false) return -1; //failed to delete
+				}
+			}
+			fileReferencesLock.release();
+			return 0;
+		}
+
+	}
 }
