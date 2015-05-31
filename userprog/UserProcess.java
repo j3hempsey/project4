@@ -443,6 +443,20 @@ public class UserProcess {
 		return readBytes;
 	}
 
+	private int handleWrite(int filedesc, int buffer, int count){
+		//make sure args are valid
+		if (!validAddress(buffer)) return -1;
+		if (!isValidFileDescriptor(filedesc)) return -1;
+
+		byte[] writeBuffer = new byte[count];
+
+		int readBytes = readVirtualMemory(buffer, writeBuffer);
+		int written = fileDescriptors[filedesc].write(writeBuffer, 0, readBytes);
+		//return bytes written or -1
+		return written;
+
+	}
+
 	private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2,
 			syscallJoin = 3, syscallCreate = 4, syscallOpen = 5,
 			syscallRead = 6, syscallWrite = 7, syscallClose = 8,
