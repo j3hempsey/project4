@@ -56,6 +56,7 @@ public class UserProcess {
 	 * @return <tt>true</tt> if the program was successfully executed.
 	 */
 	public boolean execute(String name, String[] args) {
+
 		if (!load(name, args))
 			return false;
 
@@ -356,7 +357,7 @@ public class UserProcess {
 			return 0;
 		}
 	}
-	/*
+	
 	private int handleExit(int status){
 		Lib.debug(dbgProcess, "[D] ===> Process exiting...");
 		
@@ -375,9 +376,16 @@ public class UserProcess {
 			//Child process remove from the parents process list
 			parent.children.remove(this);
 		}
+
+		if (this.id == 0){
+			handleHalt();
+		}
+
+		Lib.debug(dbgProcess, "[D] ===> Process exiting with status " + status);
+		KThread.finish();
 		return status;
 	}
-	*/
+
 
 	//handles open and create
 	//boolean true if call is create otherwise set to false
@@ -528,6 +536,9 @@ public class UserProcess {
 		switch (syscall) {
 		case syscallHalt:
 			return handleHalt();
+
+		case syscallExit:
+			return handleExit(a0);
 
 		case syscallCreate:
 			return handleOpen(a0, true);
