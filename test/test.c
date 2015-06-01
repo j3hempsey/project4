@@ -5,6 +5,7 @@
 int main(int argc, char** argv){
 	char in[20];
 	int filedesc = 0;
+	int readdesc = 0;
 	int returncode = 0;
 
 	printf("=== File System Test ===\n");
@@ -49,13 +50,24 @@ int main(int argc, char** argv){
 	}
 	printf("Done.\n\n");
 
+	printf("Testing file read...\n");
+	readdesc = open("b.txt");
+	if (readdesc == -1) {
+		printf("ERROR: not opened.\n");
+		return -1;
+	}
+	read(readdesc, in, 10);
+	printf("Read string: %s\n", in);
+	printf("Done.\n");
+
 	printf("Testing unlink before close...\n");
+	printf("Unlinking...\n");
 	returncode = unlink("a.txt");
 	if (returncode == -1){
 		printf("ERROR: did not unlink.");
 		return -1;
 	}
-	printf("Now close the file. \n");
+	printf("Closing...\n");
 	if (close(filedesc) == -1){
 		printf("ERROR: did not close properly.\n");
 		return -1;
