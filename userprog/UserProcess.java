@@ -462,8 +462,11 @@ public class UserProcess {
 
 	private int handleUnlink(int name){
 		if (!validAddress(name)) return -1;
+		Lib.debug(dbgProcess, "[D] ===> Getting file name.");	
 
 		String file = readVirtualMemoryString(name, maxStringLength);
+		Lib.debug(dbgProcess, "[D] ===> Deleting: " + file);	
+
 		return FileReference.deleteFile(file);
 	}
 
@@ -711,7 +714,6 @@ public class UserProcess {
 
 		public static int deleteFile(String file){
 			FileReference temp;
-			fileReferencesLock.acquire();
 			fileReferencesLock.acquire();
 			//if reference doesnot exist add it
 			temp = references.get(file);
