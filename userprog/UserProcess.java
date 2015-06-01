@@ -428,7 +428,7 @@ public class UserProcess {
 
 		//make sure bytes were read
 		if (readBytes == -1) return -1;
-		
+		//Lib.debug(dbgProcess, "[D] ===> Reading from file.");
 		int wroteBytes = writeVirtualMemory(buffer, readBuffer, 0, readBytes);
 		//make sure everything was written
 		if (wroteBytes != readBytes)
@@ -445,6 +445,7 @@ public class UserProcess {
 		byte[] writeBuffer = new byte[count];
 
 		int readBytes = readVirtualMemory(buffer, writeBuffer);
+		//Lib.debug(dbgProcess, "[D] ===> Writing to file.");	
 		int written = fileDescriptors[filedesc].write(writeBuffer, 0, readBytes);
 		//return bytes written or -1
 		return written;
