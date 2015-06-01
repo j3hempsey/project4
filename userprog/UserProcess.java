@@ -364,17 +364,12 @@ public class UserProcess {
 		//end the program runnning under process
 		coff.close();
 		//close all the file descriptors
-		for (int i = 0; i < files.length; ++i){
-			if (files[i] != null){
-				files[i].close();	//close the descriptor
-				files[i] = null;		//clear it for good measure
-			} else {
-				break;
+		Lib.debug(dbgProcess, "[D] ===> Closing any open files...");
+		for (int i = 0; i < fileDescriptors.length; ++i){
+			if (fileDescriptors[i] != null){
+				fileDescriptors[i].close();	//close the descriptor
+				fileDescriptors[i] = null;		//clear it for good measure
 			}
-		}
-		if (parent != null){
-			//Child process remove from the parents process list
-			parent.children.remove(this);
 		}
 
 		if (this.id == 0){
@@ -414,12 +409,9 @@ public class UserProcess {
 
 	private int handleRead(int filedesc, int buffer, int count){
 		//make sure args are valid
-		if (!validAddress(buffer)){
-			return -1;
-		}
-		if (!isValidFileDescriptor(filedesc)){
-			return -1;
-		}
+		if (!validAddress(buffer)) return -1;
+		if (!isValidFileDescriptor(filedesc)) return -1;
+		if (count < 0) return -1;
 
 		//create the read buffer
 		byte[] readBuffer = new byte[count];
@@ -441,6 +433,7 @@ public class UserProcess {
 		//make sure args are valid
 		if (!validAddress(buffer)) return -1;
 		if (!isValidFileDescriptor(filedesc)) return -1;
+		if (count < 0) return -1;
 
 		byte[] writeBuffer = new byte[count];
 
@@ -625,11 +618,6 @@ public class UserProcess {
 	}
 	/********************/
 	public KThread thisThread = null;
-
-	private OpenFile[] files = new OpenFile[16];
-
-	public UserProcess parent = null;
-	public ArrayList<UserProcess> children = new ArrayList<UserProcess>();
 
 	/** Number of times the UserProcess constructor was called. */
 	private static int numCreated = 0;

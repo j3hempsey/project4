@@ -32,7 +32,7 @@ int main(int argc, char** argv){
 	printf("Done.\n\n");
 
 	printf("Testing file open...\n");
-	//system call create
+	//system call open
 	filedesc = open("a.txt");
 	printf("Opened file %d\n", filedesc);
 	if (filedesc == -1) {
@@ -48,6 +48,9 @@ int main(int argc, char** argv){
 		printf("ERROR: did not write");
 		return -1;
 	}
+	printf("Testing file write again...\n");
+	returncode = write(filedesc + 4, "The boogieman came around", 25);
+	printf("Write returned with: %d\n", returncode);
 	printf("Done.\n\n");
 
 	printf("Testing file read...\n");
@@ -58,13 +61,16 @@ int main(int argc, char** argv){
 	}
 	read(readdesc, in, 10);
 	printf("Read string: %s\n", in);
+	printf("Testing read again...\n");
+	read(readdesc, in, -10);
+	printf("Read string: %s\n", in);
 	printf("Done.\n");
 
 	printf("Testing unlink before close...\n");
 	printf("Unlinking...\n");
 	returncode = unlink("a.txt");
 	if (returncode == -1){
-		printf("ERROR: did not unlink.");
+		printf("ERROR: did not unlink.\n");
 		return -1;
 	}
 	printf("Closing...\n");
@@ -73,7 +79,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("Done.\n\n");
-
+	
 	printf("===       END        ===\n");
 	return 0;
 }
